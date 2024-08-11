@@ -18,7 +18,6 @@ message AssocAddRequest {
   string id1 = 1;
   string atype = 2;
   string id2 = 3;
-  string time = 4;
 }
 
 message AssocDeleteRequest {
