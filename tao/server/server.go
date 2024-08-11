@@ -76,7 +76,7 @@ func (s *Server) AssocAdd(ctx context.Context, in *pb.AssocAddRequest) (*pb.Gene
 	if err != nil {
 		return nil, err
 	}
-	assocSetName := fmt.Sprintf("%s-%s", in.Id1, assoc.Atype)
+	assocSetName := fmt.Sprintf("%s-%s", in.Id1, in.Atype)
 	member := redis.Z{
 		Score:  float64(assoc.Timestamp.Nanosecond()),
 		Member: in.Id2,
@@ -174,7 +174,7 @@ func (s *Server) AssocRange(ctx context.Context, in *pb.AssocRangeRequest) (*pb.
 	if err != nil {
 		return nil, err
 	}
-	assocIds := make([]string, len(res))
+	assocIds := make([]string, 0)
 	for _, v := range res {
 		assocIds = append(assocIds, v)
 	}
