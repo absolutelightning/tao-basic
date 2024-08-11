@@ -93,7 +93,20 @@ func main() {
 	}
 
 	err = createSchema(db)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create schema %s", err.Error()))
+	}
 
+	createIndexes := func(db *pg.DB) error {
+		_, err := db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_jsonb_data ON objects USING gin (data);
+		CREATE INDEX IF NOT EXISTS idx_jsonb_btree_name ON objects ((data->>'name'));
+		CREATE INDEX IF NOT EXISTS idx_jsonb_btree_version ON objects ((data->>'version'));
+	`)
+		return err
+	}
+
+	err = createIndexes(db)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create schema %s", err.Error()))
 	}

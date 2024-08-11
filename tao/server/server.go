@@ -122,21 +122,39 @@ func (s *Server) AssocGet(ctx context.Context, in *pb.AssocGetRequest) (*pb.Asso
 			assocIds = append(assocIds, v)
 		}
 	}
+	pipe := s.redisClient.Pipeline()
+	cmds := make([]*redis.MapStringStringCmd, len(assocIds))
+	for i, v := range assocIds {
+		cmds[i] = pipe.HGetAll(ctx, v)
+	}
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resMap := make(map[string]map[string]string, len(assocIds))
+	for i, cmd := range cmds {
+		if err = cmd.Err(); err != nil {
+			return nil, err
+		}
+		resMap[assocIds[i]] = cmd.Val()
+	}
+
 	assocGetResp := &pb.AssocGetResponse{
 		Objects: make([]*pb.Object, len(assocIds)),
 	}
-	for i, id := range assocIds {
-		data := s.redisClient.HGetAll(ctx, id).Val()
-		assocGetResp.Objects[i] = &pb.Object{
-			Id:    id,
-			Items: make([]*pb.KeyValuePair, len(data)),
+	itr := 0
+	for k, v := range resMap {
+		assocGetResp.Objects[itr] = &pb.Object{
+			Id:    k,
+			Items: make([]*pb.KeyValuePair, 0),
 		}
-		for j, v := range data {
-			assocGetResp.Objects[i].Items = append(assocGetResp.Objects[i].Items, &pb.KeyValuePair{
-				Key:   j,
-				Value: v,
+		for key, val := range v {
+			assocGetResp.Objects[itr].Items = append(assocGetResp.Objects[itr].Items, &pb.KeyValuePair{
+				Key:   key,
+				Value: val,
 			})
 		}
+		itr++
 	}
 	return assocGetResp, nil
 }
@@ -162,15 +180,14 @@ func (s *Server) ObjectGet(ctx context.Context, in *pb.ObjectGetRequest) (*pb.As
 		Objects: make([]*pb.Object, len(models)),
 	}
 	for i, model := range models {
-		data := s.redisClient.HGetAll(ctx, model.Id).Val()
 		assocGetResp.Objects[i] = &pb.Object{
 			Id:    model.Id,
 			Items: make([]*pb.KeyValuePair, 0),
 		}
-		for j, v := range data {
+		for j, v := range models[i].Data {
 			assocGetResp.Objects[i].Items = append(assocGetResp.Objects[i].Items, &pb.KeyValuePair{
 				Key:   j,
-				Value: v,
+				Value: v.(string),
 			})
 		}
 	}
