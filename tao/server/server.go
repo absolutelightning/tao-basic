@@ -100,13 +100,22 @@ func (s *Server) AssocAdd(ctx context.Context, in *pb.AssocAddRequest) (*pb.Gene
 
 func (s *Server) AssocGet(ctx context.Context, in *pb.AssocGetRequest) (*pb.AssocGetResponse, error) {
 	assocSetName := fmt.Sprintf("%s-%s", in.Id1, in.Atype)
-	res, err := s.redisClient.ZRangeByScore(ctx, assocSetName, &redis.ZRangeBy{
-		Min: *in.Low,
-		Max: *in.High,
-	}).Result()
+	var res []string
+	opts := &redis.ZRangeBy{
+		Min: "-inf",
+		Max: "+inf",
+	}
+	if in.Low != nil && in.High != nil {
+		opts = &redis.ZRangeBy{
+			Min: *in.Low,
+			Max: *in.High,
+		}
+	}
+	results, err := s.redisClient.ZRangeByScore(ctx, assocSetName, opts).Result()
 	if err != nil {
 		return nil, err
 	}
+	res = results
 	assocIds := make([]string, len(res))
 	for _, v := range res {
 		if slices.Contains(in.Id2, v) {
