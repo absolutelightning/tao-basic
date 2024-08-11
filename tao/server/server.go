@@ -237,3 +237,13 @@ func (s *Server) AssocRange(ctx context.Context, in *pb.AssocRangeRequest) (*pb.
 	}
 	return assocGetResp, nil
 }
+
+func (s *Server) BulkAssocAdd(ctx context.Context, in *pb.BulkAssocAddRequest) (*pb.GenericOkResponse, error) {
+	for _, req := range in.Req {
+		_, err := s.AssocAdd(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &pb.GenericOkResponse{}, nil
+}

@@ -55,6 +55,10 @@ message AssocGetResponse {
   repeated Object objects = 1;
 }
 
+message BulkAssocAddRequest {
+  repeated AssocAddRequest req = 1;
+}
+
 message ObjectGetDataRequest {
   repeated KeyValuePair data = 1;
 }
@@ -78,4 +82,5 @@ service TaoService {
   rpc AssocAdd(AssocAddRequest) returns (GenericOkResponse);
   rpc AssocGet(AssocGetRequest) returns (AssocGetResponse);
   rpc AssocRange(AssocRangeRequest) returns (AssocGetResponse);
+  rpc BulkAssocAdd(BulkAssocAddRequest) returns (GenericOkResponse);
 }
