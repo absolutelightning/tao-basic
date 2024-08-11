@@ -41,20 +41,29 @@ func (s *Server) ObjectAdd(ctx context.Context, in *pb.ObjectAddRequest) (*pb.Ge
 	if err != nil {
 		return nil, err
 	}
-	err = s.redisClient.HSet(ctx, in.Id, "Otype", in.Otype).Err()
+
+	// Use Redis pipeline for batching commands
+	pipe := s.redisClient.Pipeline()
+
+	// Set Otype in Redis
+	pipe.HSet(ctx, in.Id, "Otype", in.Otype)
+
+	// Set the data fields in Redis
+	for _, kv := range in.Data {
+		pipe.HSet(ctx, in.Id, kv.Key, kv.Value)
+	}
+
+	// Execute the pipeline
+	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, kv := range in.Data {
-		err = s.redisClient.HSet(ctx, in.Id, kv.Key, kv.Value).Err()
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	return &pb.GenericOkResponse{}, nil
 }
 
 func (s *Server) AssocAdd(ctx context.Context, in *pb.AssocAddRequest) (*pb.GenericOkResponse, error) {
+	// Insert the association into PostgreSQL
 	assoc := &Association{
 		Id1:       in.Id1,
 		Id2:       in.Id2,
@@ -65,36 +74,44 @@ func (s *Server) AssocAdd(ctx context.Context, in *pb.AssocAddRequest) (*pb.Gene
 	if err != nil {
 		return nil, err
 	}
+
 	// Reverse relation - CAN BE EXECUTED IN BACKGROUND
-	assoc = &Association{
+	reverseAssoc := &Association{
 		Id1:       in.Id2,
 		Id2:       in.Id1,
 		Atype:     in.Atype,
 		Timestamp: time.Now(),
 	}
-	_, err = s.pgDB.Model(assoc).Insert()
+	_, err = s.pgDB.Model(reverseAssoc).Insert()
 	if err != nil {
 		return nil, err
 	}
+
+	// Start Redis pipeline
+	pipe := s.redisClient.Pipeline()
+
+	// Add association to Redis sorted set
 	assocSetName := fmt.Sprintf("%s-%s", in.Id1, in.Atype)
 	member := redis.Z{
-		Score:  float64(assoc.Timestamp.Nanosecond()),
+		Score:  float64(assoc.Timestamp.UnixNano()), // Use UnixNano for better timestamp precision
 		Member: in.Id2,
 	}
-	err = s.redisClient.ZAdd(ctx, assocSetName, member).Err()
-	if err != nil {
-		return nil, err
-	}
-	// Reverse
-	assocSetName = fmt.Sprintf("%s-%s", in.Id2, assoc.Atype)
-	member = redis.Z{
-		Score:  float64(assoc.Timestamp.Nanosecond()),
+	pipe.ZAdd(ctx, assocSetName, member)
+
+	// Add reverse association to Redis sorted set
+	reverseAssocSetName := fmt.Sprintf("%s-%s", in.Id2, in.Atype)
+	reverseMember := redis.Z{
+		Score:  float64(reverseAssoc.Timestamp.UnixNano()), // Use UnixNano for better timestamp precision
 		Member: in.Id1,
 	}
-	err = s.redisClient.ZAdd(ctx, assocSetName, member).Err()
+	pipe.ZAdd(ctx, reverseAssocSetName, reverseMember)
+
+	// Execute the pipeline
+	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return &pb.GenericOkResponse{}, nil
 }
 
