@@ -9,7 +9,7 @@ import (
 	pb "github.com/absolutelightning/tao-basic/tao/proto"
 )
 
-var serverAddr string = "localhost:50051"
+var serverAddr string = "localhost:7051"
 
 func main() {
 	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -21,29 +21,40 @@ func main() {
 	c := pb.NewTaoServiceClient(conn)
 
 	kvData := make([]*pb.KeyValuePair, 1)
+	kvData[0] = &pb.KeyValuePair{}
 	kvData[0].Key = "batman"
-	kvData[1].Value = "bruce wayne"
+	kvData[0].Value = "bruce wayne"
 
-	c.ObjectAdd(context.Background(), &pb.ObjectAddRequest{
-		Id:    "1",
+	_, err = c.ObjectAdd(context.Background(), &pb.ObjectAddRequest{
+		Id:    "3",
 		Otype: "ws",
 		Data:  kvData,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	kvData = make([]*pb.KeyValuePair, 1)
+	kvData[0] = &pb.KeyValuePair{}
 	kvData[0].Key = "superman"
-	kvData[1].Value = "clark kent"
-	c.ObjectAdd(context.Background(), &pb.ObjectAddRequest{
-		Id:    "2",
+	kvData[0].Value = "clark kent"
+	_, err = c.ObjectAdd(context.Background(), &pb.ObjectAddRequest{
+		Id:    "4",
 		Otype: "org",
 		Data:  kvData,
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	c.AssocAdd(context.Background(), &pb.AssocAddRequest{
-		Id1:   "1",
-		Id2:   "2",
+	_, err = c.AssocAdd(context.Background(), &pb.AssocAddRequest{
+		Id1:   "3",
+		Id2:   "4",
 		Atype: "ws-org",
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	defer conn.Close()
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/redis/go-redis/v9"
@@ -13,7 +14,7 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
-var addr = "0.0.0.0:70077"
+var addr string = "localhost:7051"
 
 type Server struct {
 	pb.TaoServiceServer
@@ -51,7 +52,7 @@ func main() {
 	}
 
 	if pgPort == "" {
-		pgPort = ""
+		pgPort = "5432"
 	}
 
 	db := pg.Connect(&pg.Options{
@@ -60,6 +61,11 @@ func main() {
 		Password: pgPassword,
 		Database: pgDBName,
 	})
+
+	err = db.Ping(context.Background())
+	if err != nil {
+		panic(err)
+	}
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
@@ -76,7 +82,7 @@ func main() {
 
 		for _, model := range models {
 			err := db.Model(model).CreateTable(&orm.CreateTableOptions{
-				Temp: true,
+				Temp: false,
 			})
 			if err != nil {
 				return err
@@ -88,7 +94,7 @@ func main() {
 	err = createSchema(db)
 
 	if err != nil {
-		panic("Failed to create schema")
+		panic(fmt.Sprintf("Failed to create schema %s", err.Error()))
 	}
 
 	pb.RegisterTaoServiceServer(s, &Server{
