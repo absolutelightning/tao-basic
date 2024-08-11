@@ -138,8 +138,10 @@ func (s *Server) ObjectGet(ctx context.Context, in *pb.ObjectGetRequest) (*pb.As
 		Where("otype = ?", in.Otype).
 		Limit(int(in.Limit))
 
-	for _, kv := range in.Data.Data {
-		query = query.Where(fmt.Sprintf("data->>'%s'='%s'", kv.Key, kv.Value))
+	if in.Data != nil {
+		for _, kv := range in.Data.Data {
+			query = query.Where(fmt.Sprintf("data->>'%s'='%s'", kv.Key, kv.Value))
+		}
 	}
 
 	err := query.Select()
