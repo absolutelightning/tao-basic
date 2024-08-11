@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package greet;
+package tao;
 
 option go_package = "github.com/absolutelightning/tao-basic/tao/proto";
 
