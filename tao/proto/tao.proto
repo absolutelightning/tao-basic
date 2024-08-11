@@ -55,9 +55,14 @@ message AssocGetResponse {
   repeated Object objects = 1;
 }
 
+message ObjectGetDataRequest {
+  repeated KeyValuePair data = 1;
+}
+
 message ObjectGetRequest {
   string otype = 1;
   int64 limit = 2;
+  optional ObjectGetDataRequest data = 3;
 }
 
 message AssocRangeRequest {

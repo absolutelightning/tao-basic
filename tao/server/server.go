@@ -134,10 +134,18 @@ func (s *Server) AssocGet(ctx context.Context, in *pb.AssocGetRequest) (*pb.Asso
 
 func (s *Server) ObjectGet(ctx context.Context, in *pb.ObjectGetRequest) (*pb.AssocGetResponse, error) {
 	var models []Object
-	s.pgDB.Model(&models).
+	query := s.pgDB.Model(&models).
 		Where("otype = ?", in.Otype).
-		Limit(int(in.Limit)).
-		Select()
+		Limit(int(in.Limit))
+
+	for _, kv := range in.Data.Data {
+		query = query.Where(fmt.Sprintf("data->>'%s'='%s'", kv.Key, kv.Value))
+	}
+
+	err := query.Select()
+	if err != nil {
+		return nil, err
+	}
 
 	assocGetResp := &pb.AssocGetResponse{
 		Objects: make([]*pb.Object, len(models)),

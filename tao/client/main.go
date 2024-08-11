@@ -57,9 +57,26 @@ func main() {
 		panic(err)
 	}
 
+	kvData = make([]*pb.KeyValuePair, 1)
+	kvData[0] = &pb.KeyValuePair{}
+	kvData[0].Key = "superman"
+	kvData[0].Value = "clark kent"
 	fmt.Println(c.ObjectGet(context.Background(), &pb.ObjectGetRequest{
 		Otype: "org",
-		Limit: 1,
+		Data: &pb.ObjectGetDataRequest{
+			Data: kvData,
+		},
+	}))
+
+	kvData = make([]*pb.KeyValuePair, 1)
+	kvData[0] = &pb.KeyValuePair{}
+	kvData[0].Key = "batman"
+	kvData[0].Value = "bruce wayne"
+	fmt.Println(c.ObjectGet(context.Background(), &pb.ObjectGetRequest{
+		Otype: "ws",
+		Data: &pb.ObjectGetDataRequest{
+			Data: kvData,
+		},
 	}))
 
 	defer conn.Close()
