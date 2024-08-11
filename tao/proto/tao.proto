@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package greet;
+
+option go_package = "github.com/absolutelightning/tao-basic/tao/proto";
+
+message ObjectAddRequest {
+  string id = 1;
+  string otype = 2;
+  repeated KeyValuePair data = 3;
+}
+
+message GenericOkResponse {
+
+}
+
+message AssocAddRequest {
+  string id1 = 1;
+  string atype = 2;
+  string id2 = 3;
+  string time = 4;
+}
+
+message AssocDeleteRequest {
+  string id1 = 1;
+  string atype = 2;
+  string id2 = 3;
+}
+
+message AssocChangeType {
+  string id1 = 1;
+  string atype = 2;
+  string id2 = 3;
+  string newType = 4;
+}
+
+message AssocGetRequest {
+  string id1 = 1;
+  string atype = 2;
+  repeated string id2 = 3;
+}
+
+message AssocGetRangeRequest {
+  string id1 = 1;
+  string atype = 2;
+  repeated string id2 = 3;
+  string high = 4;
+  string low = 5;
+}
+
+message KeyValuePair {
+  string key = 1;
+  string value = 2;
+}
+
+message Object {
+  string id = 1;
+  repeated KeyValuePair items = 2;
+}
+
+message AssocGetResponse {
+  repeated Object objects = 1;
+}
+
+service TaoService {
+  rpc ObjectAdd(ObjectAddRequest) returns (GenericOkResponse);
+  rpc AssocAdd(AssocAddRequest) returns (GenericOkResponse);
+  rpc AssocGet(AssocGetRequest) returns (AssocGetResponse);
+}
