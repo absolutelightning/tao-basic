@@ -82,7 +82,8 @@ func main() {
 
 		for _, model := range models {
 			err := db.Model(model).CreateTable(&orm.CreateTableOptions{
-				Temp: false,
+				Temp:        false,
+				IfNotExists: true,
 			})
 			if err != nil {
 				return err
