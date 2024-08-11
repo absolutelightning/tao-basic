@@ -136,3 +136,29 @@ func (s *Server) AssocGet(ctx context.Context, in *pb.AssocGetRequest) (*pb.Asso
 	}
 	return assocGetResp, nil
 }
+
+func (s *Server) ObjectGet(ctx context.Context, in *pb.ObjectGetRequest) (*pb.AssocGetResponse, error) {
+	var models []Object
+	s.pgDB.Model(&models).
+		Where("otype = ?", in.Otype).
+		Limit(int(in.Limit)).
+		Select()
+
+	assocGetResp := &pb.AssocGetResponse{
+		Objects: make([]*pb.Object, len(models)),
+	}
+	for i, model := range models {
+		data := s.redisClient.HGetAll(ctx, model.Id).Val()
+		assocGetResp.Objects[i] = &pb.Object{
+			Id:    model.Id,
+			Items: make([]*pb.KeyValuePair, 0),
+		}
+		for j, v := range data {
+			assocGetResp.Objects[i].Items = append(assocGetResp.Objects[i].Items, &pb.KeyValuePair{
+				Key:   j,
+				Value: v,
+			})
+		}
+	}
+	return assocGetResp, nil
+}

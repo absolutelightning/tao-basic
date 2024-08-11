@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
@@ -26,7 +27,7 @@ func main() {
 	kvData[0].Value = "bruce wayne"
 
 	_, err = c.ObjectAdd(context.Background(), &pb.ObjectAddRequest{
-		Id:    "3",
+		Id:    "1",
 		Otype: "ws",
 		Data:  kvData,
 	})
@@ -39,7 +40,7 @@ func main() {
 	kvData[0].Key = "superman"
 	kvData[0].Value = "clark kent"
 	_, err = c.ObjectAdd(context.Background(), &pb.ObjectAddRequest{
-		Id:    "4",
+		Id:    "2",
 		Otype: "org",
 		Data:  kvData,
 	})
@@ -48,13 +49,18 @@ func main() {
 	}
 
 	_, err = c.AssocAdd(context.Background(), &pb.AssocAddRequest{
-		Id1:   "3",
-		Id2:   "4",
+		Id1:   "1",
+		Id2:   "2",
 		Atype: "ws-org",
 	})
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println(c.ObjectGet(context.Background(), &pb.ObjectGetRequest{
+		Otype: "org",
+		Limit: 1,
+	}))
 
 	defer conn.Close()
 }

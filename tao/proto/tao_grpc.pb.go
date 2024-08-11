@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	TaoService_ObjectAdd_FullMethodName = "/tao.TaoService/ObjectAdd"
+	TaoService_ObjectGet_FullMethodName = "/tao.TaoService/ObjectGet"
 	TaoService_AssocAdd_FullMethodName  = "/tao.TaoService/AssocAdd"
 	TaoService_AssocGet_FullMethodName  = "/tao.TaoService/AssocGet"
 )
@@ -29,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TaoServiceClient interface {
 	ObjectAdd(ctx context.Context, in *ObjectAddRequest, opts ...grpc.CallOption) (*GenericOkResponse, error)
+	ObjectGet(ctx context.Context, in *ObjectGetRequest, opts ...grpc.CallOption) (*AssocGetResponse, error)
 	AssocAdd(ctx context.Context, in *AssocAddRequest, opts ...grpc.CallOption) (*GenericOkResponse, error)
 	AssocGet(ctx context.Context, in *AssocGetRequest, opts ...grpc.CallOption) (*AssocGetResponse, error)
 }
@@ -44,6 +46,15 @@ func NewTaoServiceClient(cc grpc.ClientConnInterface) TaoServiceClient {
 func (c *taoServiceClient) ObjectAdd(ctx context.Context, in *ObjectAddRequest, opts ...grpc.CallOption) (*GenericOkResponse, error) {
 	out := new(GenericOkResponse)
 	err := c.cc.Invoke(ctx, TaoService_ObjectAdd_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taoServiceClient) ObjectGet(ctx context.Context, in *ObjectGetRequest, opts ...grpc.CallOption) (*AssocGetResponse, error) {
+	out := new(AssocGetResponse)
+	err := c.cc.Invoke(ctx, TaoService_ObjectGet_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +84,7 @@ func (c *taoServiceClient) AssocGet(ctx context.Context, in *AssocGetRequest, op
 // for forward compatibility
 type TaoServiceServer interface {
 	ObjectAdd(context.Context, *ObjectAddRequest) (*GenericOkResponse, error)
+	ObjectGet(context.Context, *ObjectGetRequest) (*AssocGetResponse, error)
 	AssocAdd(context.Context, *AssocAddRequest) (*GenericOkResponse, error)
 	AssocGet(context.Context, *AssocGetRequest) (*AssocGetResponse, error)
 	mustEmbedUnimplementedTaoServiceServer()
@@ -84,6 +96,9 @@ type UnimplementedTaoServiceServer struct {
 
 func (UnimplementedTaoServiceServer) ObjectAdd(context.Context, *ObjectAddRequest) (*GenericOkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObjectAdd not implemented")
+}
+func (UnimplementedTaoServiceServer) ObjectGet(context.Context, *ObjectGetRequest) (*AssocGetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ObjectGet not implemented")
 }
 func (UnimplementedTaoServiceServer) AssocAdd(context.Context, *AssocAddRequest) (*GenericOkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AssocAdd not implemented")
@@ -118,6 +133,24 @@ func _TaoService_ObjectAdd_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaoServiceServer).ObjectAdd(ctx, req.(*ObjectAddRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaoService_ObjectGet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ObjectGetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoServiceServer).ObjectGet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaoService_ObjectGet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoServiceServer).ObjectGet(ctx, req.(*ObjectGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -168,6 +201,10 @@ var TaoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ObjectAdd",
 			Handler:    _TaoService_ObjectAdd_Handler,
+		},
+		{
+			MethodName: "ObjectGet",
+			Handler:    _TaoService_ObjectGet_Handler,
 		},
 		{
 			MethodName: "AssocAdd",
