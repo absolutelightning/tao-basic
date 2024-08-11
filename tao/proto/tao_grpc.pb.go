@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	TaoService_ObjectAdd_FullMethodName = "/tao.TaoService/ObjectAdd"
-	TaoService_ObjectGet_FullMethodName = "/tao.TaoService/ObjectGet"
-	TaoService_AssocAdd_FullMethodName  = "/tao.TaoService/AssocAdd"
-	TaoService_AssocGet_FullMethodName  = "/tao.TaoService/AssocGet"
+	TaoService_ObjectAdd_FullMethodName  = "/tao.TaoService/ObjectAdd"
+	TaoService_ObjectGet_FullMethodName  = "/tao.TaoService/ObjectGet"
+	TaoService_AssocAdd_FullMethodName   = "/tao.TaoService/AssocAdd"
+	TaoService_AssocGet_FullMethodName   = "/tao.TaoService/AssocGet"
+	TaoService_AssocRange_FullMethodName = "/tao.TaoService/AssocRange"
 )
 
 // TaoServiceClient is the client API for TaoService service.
@@ -33,6 +34,7 @@ type TaoServiceClient interface {
 	ObjectGet(ctx context.Context, in *ObjectGetRequest, opts ...grpc.CallOption) (*AssocGetResponse, error)
 	AssocAdd(ctx context.Context, in *AssocAddRequest, opts ...grpc.CallOption) (*GenericOkResponse, error)
 	AssocGet(ctx context.Context, in *AssocGetRequest, opts ...grpc.CallOption) (*AssocGetResponse, error)
+	AssocRange(ctx context.Context, in *AssocRangeRequest, opts ...grpc.CallOption) (*AssocGetResponse, error)
 }
 
 type taoServiceClient struct {
@@ -79,6 +81,15 @@ func (c *taoServiceClient) AssocGet(ctx context.Context, in *AssocGetRequest, op
 	return out, nil
 }
 
+func (c *taoServiceClient) AssocRange(ctx context.Context, in *AssocRangeRequest, opts ...grpc.CallOption) (*AssocGetResponse, error) {
+	out := new(AssocGetResponse)
+	err := c.cc.Invoke(ctx, TaoService_AssocRange_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TaoServiceServer is the server API for TaoService service.
 // All implementations must embed UnimplementedTaoServiceServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type TaoServiceServer interface {
 	ObjectGet(context.Context, *ObjectGetRequest) (*AssocGetResponse, error)
 	AssocAdd(context.Context, *AssocAddRequest) (*GenericOkResponse, error)
 	AssocGet(context.Context, *AssocGetRequest) (*AssocGetResponse, error)
+	AssocRange(context.Context, *AssocRangeRequest) (*AssocGetResponse, error)
 	mustEmbedUnimplementedTaoServiceServer()
 }
 
@@ -105,6 +117,9 @@ func (UnimplementedTaoServiceServer) AssocAdd(context.Context, *AssocAddRequest)
 }
 func (UnimplementedTaoServiceServer) AssocGet(context.Context, *AssocGetRequest) (*AssocGetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AssocGet not implemented")
+}
+func (UnimplementedTaoServiceServer) AssocRange(context.Context, *AssocRangeRequest) (*AssocGetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AssocRange not implemented")
 }
 func (UnimplementedTaoServiceServer) mustEmbedUnimplementedTaoServiceServer() {}
 
@@ -191,6 +206,24 @@ func _TaoService_AssocGet_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaoService_AssocRange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssocRangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoServiceServer).AssocRange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaoService_AssocRange_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoServiceServer).AssocRange(ctx, req.(*AssocRangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TaoService_ServiceDesc is the grpc.ServiceDesc for TaoService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +246,10 @@ var TaoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AssocGet",
 			Handler:    _TaoService_AssocGet_Handler,
+		},
+		{
+			MethodName: "AssocRange",
+			Handler:    _TaoService_AssocRange_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

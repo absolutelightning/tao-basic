@@ -37,8 +37,8 @@ message AssocGetRequest {
   string id1 = 1;
   string atype = 2;
   repeated string id2 = 3;
-  optional float low = 4;
-  optional float high = 5;
+  optional string low = 4;
+  optional string high = 5;
 }
 
 message KeyValuePair {
@@ -60,9 +60,17 @@ message ObjectGetRequest {
   int64 limit = 2;
 }
 
+message AssocRangeRequest {
+  string id1 = 1;
+  string atype = 2;
+  int64 pos = 3;
+  int64 limit = 4;
+}
+
 service TaoService {
   rpc ObjectAdd(ObjectAddRequest) returns (GenericOkResponse);
   rpc ObjectGet(ObjectGetRequest) returns (AssocGetResponse);
   rpc AssocAdd(AssocAddRequest) returns (GenericOkResponse);
   rpc AssocGet(AssocGetRequest) returns (AssocGetResponse);
+  rpc AssocRange(AssocRangeRequest) returns (AssocGetResponse);
 }

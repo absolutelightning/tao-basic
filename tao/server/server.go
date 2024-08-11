@@ -99,16 +99,11 @@ func (s *Server) AssocAdd(ctx context.Context, in *pb.AssocAddRequest) (*pb.Gene
 }
 
 func (s *Server) AssocGet(ctx context.Context, in *pb.AssocGetRequest) (*pb.AssocGetResponse, error) {
-	low := float32(0.0)
-	if in.Low != nil {
-		low = *in.Low
-	}
-	high := float32(0.0)
-	if in.High != nil {
-		low = *in.High
-	}
 	assocSetName := fmt.Sprintf("%s-%s", in.Id1, in.Atype)
-	res, err := s.redisClient.ZRange(ctx, assocSetName, int64(low), int64(high)).Result()
+	res, err := s.redisClient.ZRangeByScore(ctx, assocSetName, &redis.ZRangeBy{
+		Min: *in.Low,
+		Max: *in.High,
+	}).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -152,6 +147,35 @@ func (s *Server) ObjectGet(ctx context.Context, in *pb.ObjectGetRequest) (*pb.As
 		assocGetResp.Objects[i] = &pb.Object{
 			Id:    model.Id,
 			Items: make([]*pb.KeyValuePair, 0),
+		}
+		for j, v := range data {
+			assocGetResp.Objects[i].Items = append(assocGetResp.Objects[i].Items, &pb.KeyValuePair{
+				Key:   j,
+				Value: v,
+			})
+		}
+	}
+	return assocGetResp, nil
+}
+
+func (s *Server) AssocRange(ctx context.Context, in *pb.AssocRangeRequest) (*pb.AssocGetResponse, error) {
+	assocSetName := fmt.Sprintf("%s-%s", in.Id1, in.Atype)
+	res, err := s.redisClient.ZRange(ctx, assocSetName, in.Pos, in.Pos+in.Limit).Result()
+	if err != nil {
+		return nil, err
+	}
+	assocIds := make([]string, len(res))
+	for _, v := range res {
+		assocIds = append(assocIds, v)
+	}
+	assocGetResp := &pb.AssocGetResponse{
+		Objects: make([]*pb.Object, len(assocIds)),
+	}
+	for i, id := range assocIds {
+		data := s.redisClient.HGetAll(context.Background(), id).Val()
+		assocGetResp.Objects[i] = &pb.Object{
+			Id:    id,
+			Items: make([]*pb.KeyValuePair, len(data)),
 		}
 		for j, v := range data {
 			assocGetResp.Objects[i].Items = append(assocGetResp.Objects[i].Items, &pb.KeyValuePair{
