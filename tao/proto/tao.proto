@@ -76,6 +76,10 @@ message AssocRangeRequest {
   int64 limit = 4;
 }
 
+message BulkObjectAddRequest {
+  repeated ObjectAddRequest req = 1;
+}
+
 service TaoService {
   rpc ObjectAdd(ObjectAddRequest) returns (GenericOkResponse);
   rpc ObjectGet(ObjectGetRequest) returns (AssocGetResponse);
@@ -83,4 +87,5 @@ service TaoService {
   rpc AssocGet(AssocGetRequest) returns (AssocGetResponse);
   rpc AssocRange(AssocRangeRequest) returns (AssocGetResponse);
   rpc BulkAssocAdd(BulkAssocAddRequest) returns (GenericOkResponse);
+  rpc BulkObjectAdd(BulkObjectAddRequest) returns (GenericOkResponse);
 }

@@ -19,12 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	TaoService_ObjectAdd_FullMethodName    = "/tao.TaoService/ObjectAdd"
-	TaoService_ObjectGet_FullMethodName    = "/tao.TaoService/ObjectGet"
-	TaoService_AssocAdd_FullMethodName     = "/tao.TaoService/AssocAdd"
-	TaoService_AssocGet_FullMethodName     = "/tao.TaoService/AssocGet"
-	TaoService_AssocRange_FullMethodName   = "/tao.TaoService/AssocRange"
-	TaoService_BulkAssocAdd_FullMethodName = "/tao.TaoService/BulkAssocAdd"
+	TaoService_ObjectAdd_FullMethodName     = "/tao.TaoService/ObjectAdd"
+	TaoService_ObjectGet_FullMethodName     = "/tao.TaoService/ObjectGet"
+	TaoService_AssocAdd_FullMethodName      = "/tao.TaoService/AssocAdd"
+	TaoService_AssocGet_FullMethodName      = "/tao.TaoService/AssocGet"
+	TaoService_AssocRange_FullMethodName    = "/tao.TaoService/AssocRange"
+	TaoService_BulkAssocAdd_FullMethodName  = "/tao.TaoService/BulkAssocAdd"
+	TaoService_BulkObjectAdd_FullMethodName = "/tao.TaoService/BulkObjectAdd"
 )
 
 // TaoServiceClient is the client API for TaoService service.
@@ -37,6 +38,7 @@ type TaoServiceClient interface {
 	AssocGet(ctx context.Context, in *AssocGetRequest, opts ...grpc.CallOption) (*AssocGetResponse, error)
 	AssocRange(ctx context.Context, in *AssocRangeRequest, opts ...grpc.CallOption) (*AssocGetResponse, error)
 	BulkAssocAdd(ctx context.Context, in *BulkAssocAddRequest, opts ...grpc.CallOption) (*GenericOkResponse, error)
+	BulkObjectAdd(ctx context.Context, in *BulkObjectAddRequest, opts ...grpc.CallOption) (*GenericOkResponse, error)
 }
 
 type taoServiceClient struct {
@@ -101,6 +103,15 @@ func (c *taoServiceClient) BulkAssocAdd(ctx context.Context, in *BulkAssocAddReq
 	return out, nil
 }
 
+func (c *taoServiceClient) BulkObjectAdd(ctx context.Context, in *BulkObjectAddRequest, opts ...grpc.CallOption) (*GenericOkResponse, error) {
+	out := new(GenericOkResponse)
+	err := c.cc.Invoke(ctx, TaoService_BulkObjectAdd_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TaoServiceServer is the server API for TaoService service.
 // All implementations must embed UnimplementedTaoServiceServer
 // for forward compatibility
@@ -111,6 +122,7 @@ type TaoServiceServer interface {
 	AssocGet(context.Context, *AssocGetRequest) (*AssocGetResponse, error)
 	AssocRange(context.Context, *AssocRangeRequest) (*AssocGetResponse, error)
 	BulkAssocAdd(context.Context, *BulkAssocAddRequest) (*GenericOkResponse, error)
+	BulkObjectAdd(context.Context, *BulkObjectAddRequest) (*GenericOkResponse, error)
 	mustEmbedUnimplementedTaoServiceServer()
 }
 
@@ -135,6 +147,9 @@ func (UnimplementedTaoServiceServer) AssocRange(context.Context, *AssocRangeRequ
 }
 func (UnimplementedTaoServiceServer) BulkAssocAdd(context.Context, *BulkAssocAddRequest) (*GenericOkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BulkAssocAdd not implemented")
+}
+func (UnimplementedTaoServiceServer) BulkObjectAdd(context.Context, *BulkObjectAddRequest) (*GenericOkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BulkObjectAdd not implemented")
 }
 func (UnimplementedTaoServiceServer) mustEmbedUnimplementedTaoServiceServer() {}
 
@@ -257,6 +272,24 @@ func _TaoService_BulkAssocAdd_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaoService_BulkObjectAdd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BulkObjectAddRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoServiceServer).BulkObjectAdd(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaoService_BulkObjectAdd_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoServiceServer).BulkObjectAdd(ctx, req.(*BulkObjectAddRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TaoService_ServiceDesc is the grpc.ServiceDesc for TaoService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -287,6 +320,10 @@ var TaoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BulkAssocAdd",
 			Handler:    _TaoService_BulkAssocAdd_Handler,
+		},
+		{
+			MethodName: "BulkObjectAdd",
+			Handler:    _TaoService_BulkObjectAdd_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

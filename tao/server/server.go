@@ -247,3 +247,13 @@ func (s *Server) BulkAssocAdd(ctx context.Context, in *pb.BulkAssocAddRequest) (
 	}
 	return &pb.GenericOkResponse{}, nil
 }
+
+func (s *Server) BulkObjectAdd(ctx context.Context, in *pb.BulkObjectAddRequest) (*pb.GenericOkResponse, error) {
+	for _, req := range in.Req {
+		_, err := s.ObjectAdd(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &pb.GenericOkResponse{}, nil
+}
