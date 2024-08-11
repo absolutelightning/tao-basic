@@ -14,7 +14,7 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
-var addr string = "localhost:7051"
+var addr string = "0.0.0.0:7051"
 
 type Server struct {
 	pb.TaoServiceServer
