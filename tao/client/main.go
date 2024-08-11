@@ -79,5 +79,19 @@ func main() {
 		},
 	}))
 
+	fmt.Println(c.AssocRange(context.Background(), &pb.AssocRangeRequest{
+		Id1:   "1",
+		Atype: "ws-org",
+		Pos:   0,
+		Limit: -1,
+	}))
+
+	fmt.Println(c.AssocRange(context.Background(), &pb.AssocRangeRequest{
+		Id1:   "2",
+		Atype: "ws-org",
+		Pos:   0,
+		Limit: -1,
+	}))
+
 	defer conn.Close()
 }

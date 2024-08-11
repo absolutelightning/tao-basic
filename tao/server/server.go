@@ -183,25 +183,40 @@ func (s *Server) AssocRange(ctx context.Context, in *pb.AssocRangeRequest) (*pb.
 	if err != nil {
 		return nil, err
 	}
-	assocIds := make([]string, 0)
-	for _, v := range res {
-		assocIds = append(assocIds, v)
+	assocIds := res
+	pipe := s.redisClient.Pipeline()
+	cmds := make([]*redis.MapStringStringCmd, len(assocIds))
+	for i, v := range res {
+		cmds[i] = pipe.HGetAll(ctx, v)
 	}
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	results := make(map[string]map[string]string, len(assocIds))
+	for i, cmd := range cmds {
+		if err = cmd.Err(); err != nil {
+			return nil, err
+		}
+		results[assocIds[i]] = cmd.Val()
+	}
+
 	assocGetResp := &pb.AssocGetResponse{
 		Objects: make([]*pb.Object, len(assocIds)),
 	}
-	for i, id := range assocIds {
-		data := s.redisClient.HGetAll(context.Background(), id).Val()
-		assocGetResp.Objects[i] = &pb.Object{
-			Id:    id,
-			Items: make([]*pb.KeyValuePair, len(data)),
+	itr := 0
+	for k, v := range results {
+		assocGetResp.Objects[itr] = &pb.Object{
+			Id:    k,
+			Items: make([]*pb.KeyValuePair, 0),
 		}
-		for j, v := range data {
-			assocGetResp.Objects[i].Items = append(assocGetResp.Objects[i].Items, &pb.KeyValuePair{
-				Key:   j,
-				Value: v,
+		for key, val := range v {
+			assocGetResp.Objects[itr].Items = append(assocGetResp.Objects[itr].Items, &pb.KeyValuePair{
+				Key:   key,
+				Value: val,
 			})
 		}
+		itr++
 	}
 	return assocGetResp, nil
 }
