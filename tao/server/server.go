@@ -345,7 +345,7 @@ func (s *Server) BulkObjectAdd(ctx context.Context, in *pb.BulkObjectAddRequest)
 		}
 		objects = append(objects, obj)
 	}
-	_, err := s.pgDB.Model(objects).Insert()
+	_, err := s.pgDB.Model(&objects).Insert()
 	if err != nil {
 		return nil, err
 	}
