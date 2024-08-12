@@ -257,9 +257,9 @@ func (s *Server) AssocRange(ctx context.Context, in *pb.AssocRangeRequest) (*pb.
 
 func (s *Server) BulkAssocAdd(ctx context.Context, in *pb.BulkAssocAddRequest) (*pb.GenericOkResponse, error) {
 	// Insert the association into PostgreSQL
-	assocs := make([]*Association, 0)
+	assocs := make([]Association, 0)
 	for _, req := range in.Req {
-		assocs = append(assocs, &Association{
+		assocs = append(assocs, Association{
 			Id1:       req.Id1,
 			Id2:       req.Id2,
 			Atype:     req.Atype,
