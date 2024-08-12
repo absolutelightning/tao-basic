@@ -309,10 +309,10 @@ func (s *Server) BulkAssocAdd(ctx context.Context, in *pb.BulkAssocAddRequest) (
 	// Add reverse association to Redis sorted set
 	reverseAssocData := make(map[string][]redis.Z)
 	for _, assoc := range reverseAssocs {
-		assocSetName := fmt.Sprintf("%s-%s", assoc.Id2, assoc.Atype)
+		assocSetName := fmt.Sprintf("%s-%s", assoc.Id1, assoc.Atype)
 		member := redis.Z{
 			Score:  float64(assoc.Timestamp.UnixNano()), // Use UnixNano for better timestamp precision
-			Member: assoc.Id1,
+			Member: assoc.Id2,
 		}
 		if _, ok := assocData[assocSetName]; !ok {
 			reverseAssocData[assocSetName] = make([]redis.Z, 0)
