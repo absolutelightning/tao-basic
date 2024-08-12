@@ -333,11 +333,41 @@ func (s *Server) BulkAssocAdd(ctx context.Context, in *pb.BulkAssocAddRequest) (
 }
 
 func (s *Server) BulkObjectAdd(ctx context.Context, in *pb.BulkObjectAddRequest) (*pb.GenericOkResponse, error) {
+	objects := make([]Object, 0)
 	for _, req := range in.Req {
-		_, err := s.ObjectAdd(ctx, req)
-		if err != nil {
-			return nil, err
+		obj := Object{
+			Id:    req.Id,
+			Otype: req.Otype,
+		}
+		obj.Data = make(map[string]interface{})
+		for _, kv := range req.Data {
+			obj.Data[kv.Key] = kv.Value
+		}
+		objects = append(objects, obj)
+	}
+	_, err := s.pgDB.Model(objects).Insert()
+	if err != nil {
+		return nil, err
+	}
+
+	// Use Redis pipeline for batching commands
+	pipe := s.redisClient.Pipeline()
+
+	for _, req := range in.Req {
+		// Set Otype in Redis
+		pipe.HSet(ctx, req.Id, "Otype", req.Otype)
+
+		// Set the data fields in Redis
+		for _, kv := range req.Data {
+			pipe.HSet(ctx, req.Id, kv.Key, kv.Value)
 		}
 	}
+
+	// Execute the pipeline
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.GenericOkResponse{}, nil
 }
