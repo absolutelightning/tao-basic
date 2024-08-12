@@ -29,7 +29,10 @@ func main() {
 	}
 	log.Println("Listening on address: ", addr)
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.MaxRecvMsgSize(1000000000000),
+		grpc.MaxSendMsgSize(1000000000000),
+	)
 
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
