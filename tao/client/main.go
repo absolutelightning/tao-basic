@@ -13,7 +13,9 @@ import (
 var serverAddr string = "localhost:7051"
 
 func main() {
-	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	ops := grpc.WithDefaultCallOptions(
+		grpc.MaxCallSendMsgSize(1000000000000))
+	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), ops)
 
 	if err != nil {
 		log.Fatalf("Failed to dial server: %v", err)
