@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	pb "github.com/absolutelightning/tao-basic/tao/proto"
 	"github.com/go-pg/pg/v10"
@@ -71,9 +72,12 @@ func main() {
 	}
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:         fmt.Sprintf("%s:%s", redisHost, redisPort),
+		Password:     "",                   // no password set
+		DB:           0,                    // use default DB
+		DialTimeout:  100000 * time.Second, // Increase dial timeout
+		ReadTimeout:  100000 * time.Second, // Increase read timeout
+		WriteTimeout: 100000 * time.Second, // Increase write timeout
 	})
 
 	// createSchema creates database schema for User and Story models.
