@@ -14,6 +14,7 @@ var serverAddr string = "localhost:7051"
 
 func main() {
 	ops := grpc.WithDefaultCallOptions(
+		grpc.MaxCallSendMsgSize(1000000000000),
 		grpc.MaxCallSendMsgSize(1000000000000))
 	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), ops)
 
