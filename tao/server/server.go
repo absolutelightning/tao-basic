@@ -256,12 +256,79 @@ func (s *Server) AssocRange(ctx context.Context, in *pb.AssocRangeRequest) (*pb.
 }
 
 func (s *Server) BulkAssocAdd(ctx context.Context, in *pb.BulkAssocAddRequest) (*pb.GenericOkResponse, error) {
+	// Insert the association into PostgreSQL
+	assocs := make([]*Association, 0)
 	for _, req := range in.Req {
-		_, err := s.AssocAdd(ctx, req)
-		if err != nil {
-			return nil, err
-		}
+		assocs = append(assocs, &Association{
+			Id1:       req.Id1,
+			Id2:       req.Id2,
+			Atype:     req.Atype,
+			Timestamp: time.Now(),
+		})
 	}
+	_, err := s.pgDB.Model(assocs).Insert()
+	if err != nil {
+		return nil, err
+	}
+
+	// Reverse relation - CAN BE EXECUTED IN BACKGROUND
+	reverseAssocs := make([]*Association, 0)
+	for _, req := range in.Req {
+		reverseAssocs = append(reverseAssocs, &Association{
+			Id1:       req.Id2,
+			Id2:       req.Id1,
+			Atype:     req.Atype,
+			Timestamp: time.Now(),
+		})
+	}
+	_, err = s.pgDB.Model(reverseAssocs).Insert()
+	if err != nil {
+		return nil, err
+	}
+
+	// Start Redis pipeline
+	pipe := s.redisClient.Pipeline()
+
+	// Add association to Redis sorted set
+	assocData := make(map[string][]redis.Z)
+	for _, assoc := range assocs {
+		assocSetName := fmt.Sprintf("%s-%s", assoc.Id1, assoc.Atype)
+		member := redis.Z{
+			Score:  float64(assoc.Timestamp.UnixNano()), // Use UnixNano for better timestamp precision
+			Member: assoc.Id2,
+		}
+		if _, ok := assocData[assocSetName]; !ok {
+			assocData[assocSetName] = make([]redis.Z, 0)
+		}
+		assocData[assocSetName] = append(assocData[assocSetName], member)
+	}
+	for k, v := range assocData {
+		pipe.ZAdd(ctx, k, v...)
+	}
+
+	// Add reverse association to Redis sorted set
+	reverseAssocData := make(map[string][]redis.Z)
+	for _, assoc := range reverseAssocs {
+		assocSetName := fmt.Sprintf("%s-%s", assoc.Id1, assoc.Atype)
+		member := redis.Z{
+			Score:  float64(assoc.Timestamp.UnixNano()), // Use UnixNano for better timestamp precision
+			Member: assoc.Id2,
+		}
+		if _, ok := assocData[assocSetName]; !ok {
+			reverseAssocData[assocSetName] = make([]redis.Z, 0)
+		}
+		reverseAssocData[assocSetName] = append(assocData[assocSetName], member)
+	}
+	for k, v := range reverseAssocData {
+		pipe.ZAdd(ctx, k, v...)
+	}
+
+	// Execute the pipeline
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.GenericOkResponse{}, nil
 }
 
