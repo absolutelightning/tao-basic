@@ -266,22 +266,22 @@ func (s *Server) BulkAssocAdd(ctx context.Context, in *pb.BulkAssocAddRequest) (
 			Timestamp: time.Now(),
 		})
 	}
-	_, err := s.pgDB.Model(assocs).Insert()
+	_, err := s.pgDB.Model(&assocs).Insert()
 	if err != nil {
 		return nil, err
 	}
 
 	// Reverse relation - CAN BE EXECUTED IN BACKGROUND
-	reverseAssocs := make([]*Association, 0)
+	reverseAssocs := make([]Association, 0)
 	for _, req := range in.Req {
-		reverseAssocs = append(reverseAssocs, &Association{
+		reverseAssocs = append(reverseAssocs, Association{
 			Id1:       req.Id2,
 			Id2:       req.Id1,
 			Atype:     req.Atype,
 			Timestamp: time.Now(),
 		})
 	}
-	_, err = s.pgDB.Model(reverseAssocs).Insert()
+	_, err = s.pgDB.Model(&reverseAssocs).Insert()
 	if err != nil {
 		return nil, err
 	}
