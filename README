@@ -1,3 +1,2 @@
-This is Facebook TAO implementation using Redis and Postgres.
-For now it does not support Leader Follower/ Sharding etc.
-This is a single box setup
+This is minimal Facebook TAO implementation using Redis and Postgres.
+For now it does not support Leader Follower/ Sharding etc. This is a single box setup
