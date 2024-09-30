@@ -177,34 +177,54 @@ func (s *Server) AssocGet(ctx context.Context, in *pb.AssocGetRequest) (*pb.Asso
 }
 
 func (s *Server) ObjectGet(ctx context.Context, in *pb.ObjectGetRequest) (*pb.AssocGetResponse, error) {
-	var models []Object
-	query := s.pgDB.Model(&models).
-		Where("otype = ?", in.Otype).
-		Limit(int(in.Limit))
 
+	var setKeys []string
+	allOtype, err := s.redisClient.SMembers(ctx, "Otype:"+in.Otype).Result()
+	if err != nil {
+		return nil, err
+	}
 	if in.Data != nil {
 		for _, kv := range in.Data.Data {
-			query = query.Where(fmt.Sprintf("data->>'%s'='%s'", kv.Key, kv.Value))
+			setKey := fmt.Sprintf("%s:%s", kv.Key, kv.Value)
+			setKeys = append(setKeys, setKey)
 		}
 	}
 
-	err := query.Select()
+	allSetKeys := make([]string, 0)
+	for _, v := range setKeys {
+		allSetKeys = append(allSetKeys, v)
+	}
+	for _, v := range allOtype {
+		allSetKeys = append(allSetKeys, v)
+	}
+
+	ids, err := s.redisClient.SInter(ctx, allSetKeys...).Result()
+
 	if err != nil {
 		return nil, err
 	}
 
-	assocGetResp := &pb.AssocGetResponse{
-		Objects: make([]*pb.Object, len(models)),
+	allData := make([]map[string]string, len(ids))
+	for _, id := range ids {
+		data, hgeterr := s.redisClient.HGetAll(ctx, id).Result()
+		if hgeterr != nil {
+			return nil, hgeterr
+		}
+		allData = append(allData, data)
 	}
-	for i, model := range models {
+
+	assocGetResp := &pb.AssocGetResponse{
+		Objects: make([]*pb.Object, len(ids)),
+	}
+	for i, model := range ids {
 		assocGetResp.Objects[i] = &pb.Object{
-			Id:    model.Id,
+			Id:    model,
 			Items: make([]*pb.KeyValuePair, 0),
 		}
-		for j, v := range models[i].Data {
+		for j, v := range allData[i] {
 			assocGetResp.Objects[i].Items = append(assocGetResp.Objects[i].Items, &pb.KeyValuePair{
 				Key:   j,
-				Value: v.(string),
+				Value: v,
 			})
 		}
 	}
@@ -360,7 +380,10 @@ func (s *Server) BulkObjectAdd(ctx context.Context, in *pb.BulkObjectAddRequest)
 		// Set the data fields in Redis
 		for _, kv := range req.Data {
 			pipe.HSet(ctx, req.Id, kv.Key, kv.Value)
+			setKey := fmt.Sprintf("%s:%s", kv.Key, kv.Value)
+			pipe.SAdd(ctx, setKey, req.Id)
 		}
+		pipe.SAdd(ctx, "Otype:"+req.Otype, req.Id)
 	}
 
 	// Execute the pipeline
